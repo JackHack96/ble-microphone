@@ -4,7 +4,8 @@
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 #
 
-target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/audio_i2s.c)
+#target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/audio_i2s.c)
+target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/audio_pdm.c)
 target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/audio_usb.c)
 target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/button_handler.c)
 target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/led.c)

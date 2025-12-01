@@ -51,6 +51,13 @@ config CONTIN_ARRAY
 config NRFX_I2S0
 	default y
 
+# Enable NRFX_PDM for digital microphone support
+config NRFX_PDM
+	default y
+
+config NRFX_PDM0
+	default y
+
 config PCM_MIX
 	default y
 

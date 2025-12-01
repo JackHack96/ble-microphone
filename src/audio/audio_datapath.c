@@ -21,7 +21,8 @@
 #include "macros_common.h"
 #include "led_assignments.h"
 #include "led.h"
-#include "audio_i2s.h"
+// #include "audio_i2s.h"
+#include "audio_pdm.h"
 #include "sw_codec_select.h"
 #include "audio_system.h"
 #include "streamctrl.h"
@@ -657,8 +658,10 @@ static void audio_datapath_i2s_blk_complete(uint32_t frame_start_ts_us, uint32_t
 	if (IS_ENABLED(CONFIG_STREAM_BIDIRECTIONAL) || (CONFIG_AUDIO_DEV == HEADSET)) {
 		static bool underrun_condition;
 
+		/* PDM is RX-only, skip TX handling if no TX buffer provided */
 		if (tx_buf_released == NULL) {
-			ERR_CHK_MSG(-ENOMEM, "No TX data available");
+			/* For PDM (RX-only), we don't have TX capability - skip TX processing */
+			goto skip_tx_handling;
 		}
 
 		/* Double buffered index */
@@ -702,6 +705,7 @@ static void audio_datapath_i2s_blk_complete(uint32_t frame_start_ts_us, uint32_t
 		}
 	}
 
+skip_tx_handling:
 	/********** I2S RX **********/
 	struct net_buf *rx_audio_block = NULL;
 	static uint32_t num_overruns;
@@ -745,7 +749,11 @@ static void audio_datapath_i2s_blk_complete(uint32_t frame_start_ts_us, uint32_t
 	}
 
 	/*** Data exchange ***/
-	audio_i2s_set_next_buf(tx_buf, rx_buf_released);
+	// audio_i2s_set_next_buf(tx_buf, rx_buf_released);
+	/* PDM is RX only, so we don't send a TX buffer */
+	if (rx_buf_released) {
+		audio_pdm_set_next_buf(rx_buf_released);
+	}
 
 	/*** Drift compensation ***/
 	if (ctrl_blk.drift_comp.enabled) {
@@ -775,13 +783,16 @@ static void audio_datapath_i2s_start(void)
 	}
 
 	/* Start I2S */
-	audio_i2s_start(tx_buf_0, rx_buf_0);
-	audio_i2s_set_next_buf(tx_buf_1, rx_buf_1);
+	// audio_i2s_start(tx_buf_0, rx_buf_0);
+	// audio_i2s_set_next_buf(tx_buf_1, rx_buf_1);
+	audio_pdm_start(rx_buf_0);
+	audio_pdm_set_next_buf(rx_buf_1);
 }
 
 static void audio_datapath_i2s_stop(void)
 {
-	audio_i2s_stop();
+	// audio_i2s_stop();
+	audio_pdm_stop();
 	alt_buffer_free_both();
 }
 
@@ -1045,8 +1056,11 @@ int audio_datapath_stop(void)
 int audio_datapath_init(void)
 {
 	memset(&ctrl_blk, 0, sizeof(ctrl_blk));
-	audio_i2s_blk_comp_cb_register(audio_datapath_i2s_blk_complete);
-	audio_i2s_init();
+	// audio_i2s_blk_comp_cb_register(audio_datapath_i2s_blk_complete);
+	// audio_i2s_init();
+	/* Register PDM callback instead of I2S */
+	audio_pdm_blk_comp_cb_register((pdm_blk_comp_callback_t)audio_datapath_i2s_blk_complete);
+	audio_pdm_init();
 	ctrl_blk.datapath_initialized = true;
 	ctrl_blk.drift_comp.enabled = true;
 	ctrl_blk.pres_comp.enabled = true;
