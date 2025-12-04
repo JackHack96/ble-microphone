@@ -15,8 +15,6 @@
 #include "macros_common.h"
 #include "sw_codec_select.h"
 #include "audio_datapath.h"
-#include "audio_i2s.h"
-#include "hw_codec.h"
 #include "audio_usb.h"
 #include "streamctrl.h"
 
@@ -25,6 +23,19 @@ LOG_MODULE_REGISTER(audio_system, CONFIG_AUDIO_SYSTEM_LOG_LEVEL);
 
 #define FIFO_TX_BLOCK_COUNT (CONFIG_FIFO_FRAME_SPLIT_NUM * CONFIG_FIFO_TX_FRAME_COUNT)
 #define FIFO_RX_BLOCK_COUNT (CONFIG_FIFO_FRAME_SPLIT_NUM * CONFIG_FIFO_RX_FRAME_COUNT)
+
+/* Audio block size definitions (matching audio_datapath.c) */
+#define BLK_PERIOD_US 1000
+#define BLK_SIZE_SAMPLES(r) (((r)*BLK_PERIOD_US) / 1000000)
+#define BLK_MONO_NUM_SAMPS     BLK_SIZE_SAMPLES(CONFIG_AUDIO_SAMPLE_RATE_HZ)
+#define BLK_STEREO_NUM_SAMPS   (BLK_MONO_NUM_SAMPS * 2)
+#define BLK_MONO_SIZE_OCTETS   (BLK_MONO_NUM_SAMPS * CONFIG_AUDIO_BIT_DEPTH_OCTETS)
+#define BLK_STEREO_SIZE_OCTETS (BLK_MONO_SIZE_OCTETS * 2)
+
+/* Frame size for one frame duration worth of audio data */
+#define FRAME_SIZE_SAMPLES     (CONFIG_AUDIO_SAMPLE_RATE_HZ * CONFIG_AUDIO_FRAME_DURATION_US / 1000000)
+#define FRAME_SIZE_BYTES       (FRAME_SIZE_SAMPLES * CONFIG_AUDIO_BIT_DEPTH_OCTETS * 2) /* stereo */
+#define BLOCK_SIZE_BYTES       BLK_STEREO_SIZE_OCTETS
 
 #define DEBUG_INTERVAL_NUM     1000
 #define TEST_TONE_BASE_FREQ_HZ 1000
@@ -423,11 +434,6 @@ void audio_system_start(void)
 	ret = audio_usb_start(&audio_q_tx, &audio_q_rx);
 	ERR_CHK(ret);
 #else
-	if (IS_ENABLED(CONFIG_BOARD_NRF5340_AUDIO_DK_NRF5340_CPUAPP)) {
-		ret = hw_codec_default_conf_enable();
-		ERR_CHK(ret);
-	}
-
 	ret = audio_datapath_start(&audio_q_rx);
 	ERR_CHK(ret);
 #endif /* ((CONFIG_AUDIO_SOURCE_USB) && (CONFIG_AUDIO_DEV == GATEWAY))) */
@@ -447,11 +453,6 @@ void audio_system_stop(void)
 #if ((CONFIG_AUDIO_DEV == GATEWAY) && CONFIG_AUDIO_SOURCE_USB)
 	audio_usb_stop();
 #else
-	if (IS_ENABLED(CONFIG_BOARD_NRF5340_AUDIO_DK_NRF5340_CPUAPP)) {
-		ret = hw_codec_soft_reset();
-		ERR_CHK(ret);
-	}
-
 	ret = audio_datapath_stop();
 	ERR_CHK(ret);
 #endif /* ((CONFIG_AUDIO_DEV == GATEWAY) && CONFIG_AUDIO_SOURCE_USB) */
@@ -499,14 +500,6 @@ int audio_system_init(void)
 	if (ret) {
 		LOG_ERR("Failed to initialize audio datapath: %d", ret);
 		return ret;
-	}
-
-	if (IS_ENABLED(CONFIG_BOARD_NRF5340_AUDIO_DK_NRF5340_CPUAPP)) {
-		ret = hw_codec_init();
-		if (ret) {
-			LOG_ERR("Failed to initialize HW codec: %d", ret);
-			return ret;
-		}
 	}
 #endif
 

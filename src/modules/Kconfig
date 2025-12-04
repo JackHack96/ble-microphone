@@ -44,26 +44,6 @@ config POWER_MEAS_START_ON_BOOT
 endif # NRF5340_AUDIO_POWER_MEASUREMENT
 
 #----------------------------------------------------------------------------#
-menu "I2S"
-
-config I2S_LRCK_FREQ_HZ
-	int
-	default AUDIO_SAMPLE_RATE_HZ
-	help
-	 The sample rate of I2S. For now this is tied directly to
-	 AUDIO_SAMPLE_RATE_HZ
-	 Note that this setting is only valid in I2S master mode.
-
-config I2S_CH_NUM
-	int
-	default 2
-	help
-	 The I2S driver itself supports both mono and stereo.
-	 Parts of the implementation are configured for only stereo.
-
-endmenu # I2S
-
-#----------------------------------------------------------------------------#
 menu "Log levels"
 
 module = MODULE_AUDIO_USB
@@ -72,10 +52,6 @@ source "subsys/logging/Kconfig.template.log_config"
 
 module = MODULE_BUTTON_HANDLER
 module-str = module-button-handler
-source "subsys/logging/Kconfig.template.log_config"
-
-module = MODULE_HW_CODEC
-module-str = module-hw-codec
 source "subsys/logging/Kconfig.template.log_config"
 
 module = MODULE_LED

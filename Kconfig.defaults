@@ -48,9 +48,6 @@ config REGULATOR
 config CONTIN_ARRAY
 	default y
 
-config NRFX_I2S0
-	default y
-
 # Enable NRFX_PDM for digital microphone support
 config NRFX_PDM
 	default y

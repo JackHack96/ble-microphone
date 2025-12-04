@@ -16,8 +16,7 @@ In addition, Coordinated Set Identification Service (CSIS) is implemented on the
 The following limitations apply to this application:
 
 * One CIG, one of the two CIS streams (selectable).
-* Audio output: I2S/Analog headset output.
-* Audio input: PDM microphone over I2S.
+* Audio input: PDM microphone.
 * Configuration: 16 bit, several bit rates ranging from 32 kbps to 124 kbps.
 
 .. _nrf53_audio_unicast_server_app_requirements:

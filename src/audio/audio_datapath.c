@@ -21,7 +21,6 @@
 #include "macros_common.h"
 #include "led_assignments.h"
 #include "led.h"
-// #include "audio_i2s.h"
 #include "audio_pdm.h"
 #include "sw_codec_select.h"
 #include "audio_system.h"
@@ -749,7 +748,6 @@ skip_tx_handling:
 	}
 
 	/*** Data exchange ***/
-	// audio_i2s_set_next_buf(tx_buf, rx_buf_released);
 	/* PDM is RX only, so we don't send a TX buffer */
 	if (rx_buf_released) {
 		audio_pdm_set_next_buf(rx_buf_released);
@@ -782,16 +780,13 @@ static void audio_datapath_i2s_start(void)
 				   .fifo[ctrl_blk.out.cons_blk_idx * BLK_STEREO_NUM_SAMPS];
 	}
 
-	/* Start I2S */
-	// audio_i2s_start(tx_buf_0, rx_buf_0);
-	// audio_i2s_set_next_buf(tx_buf_1, rx_buf_1);
+	/* Start PDM */
 	audio_pdm_start(rx_buf_0);
 	audio_pdm_set_next_buf(rx_buf_1);
 }
 
 static void audio_datapath_i2s_stop(void)
 {
-	// audio_i2s_stop();
 	audio_pdm_stop();
 	alt_buffer_free_both();
 }
@@ -1056,9 +1051,7 @@ int audio_datapath_stop(void)
 int audio_datapath_init(void)
 {
 	memset(&ctrl_blk, 0, sizeof(ctrl_blk));
-	// audio_i2s_blk_comp_cb_register(audio_datapath_i2s_blk_complete);
-	// audio_i2s_init();
-	/* Register PDM callback instead of I2S */
+	/* Register PDM callback */
 	audio_pdm_blk_comp_cb_register((pdm_blk_comp_callback_t)audio_datapath_i2s_blk_complete);
 	audio_pdm_init();
 	ctrl_blk.datapath_initialized = true;

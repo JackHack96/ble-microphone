@@ -110,14 +110,14 @@ void audio_pdm_init(void)
 	/* For 48kHz: Use 1.280 MHz / 80 ratio = 16 kHz, or use default 1.067 MHz */
 	/* nRF5340 PDM: 1.067 MHz (default) / 64 = 16.67 kHz (not ideal) */
 	/* Best option: Use RATIO_80X with higher clock for better quality */
-	/* However, RATIO_80X might not be available. Use DEFAULT (1.067 MHz) as fallback */
-	nrf_pdm_clock_set(p_pdm, NRF_PDM_FREQ_DEFAULT);
-	/* Default is typically 1.067 MHz. 1067k / 64 = ~16.67 kHz - STILL WRONG! */
+	/* However, RATIO_80X might not be available. Use 1.067 MHz as fallback */
+	nrf_pdm_clock_set(p_pdm, NRF_PDM_FREQ_1067K);
+	/* 1067k / 64 = ~16.67 kHz - STILL WRONG! */
 	/* We need to decimate/upsample in software, or accept lower sample rate */
-	LOG_WRN("PDM clock: DEFAULT (1.067 MHz) - produces ~16.67 kHz, not 48 kHz!");
+	LOG_WRN("PDM clock: 1.067 MHz - produces ~16.67 kHz, not 48 kHz!");
 	LOG_WRN("Audio will need software resampling or use lower BT profile");
 #else
-	nrf_pdm_clock_set(p_pdm, NRF_PDM_FREQ_DEFAULT);
+	nrf_pdm_clock_set(p_pdm, NRF_PDM_FREQ_1067K);
 	LOG_INF("PDM clock: DEFAULT");
 #endif
 
