@@ -654,14 +654,10 @@ static void audio_datapath_i2s_blk_complete(uint32_t frame_start_ts_us, uint32_t
 	/********** I2S TX **********/
 	static uint8_t *tx_buf;
 
-	if (IS_ENABLED(CONFIG_STREAM_BIDIRECTIONAL) || (CONFIG_AUDIO_DEV == HEADSET)) {
+	/* Only process TX if we have bidirectional stream or headset mode, and TX buffer is provided */
+	if ((IS_ENABLED(CONFIG_STREAM_BIDIRECTIONAL) || (CONFIG_AUDIO_DEV == HEADSET)) &&
+	    (tx_buf_released != NULL)) {
 		static bool underrun_condition;
-
-		/* PDM is RX-only, skip TX handling if no TX buffer provided */
-		if (tx_buf_released == NULL) {
-			/* For PDM (RX-only), we don't have TX capability - skip TX processing */
-			goto skip_tx_handling;
-		}
 
 		/* Double buffered index */
 		uint32_t next_out_blk_idx = NEXT_IDX(ctrl_blk.out.cons_blk_idx);
@@ -704,7 +700,6 @@ static void audio_datapath_i2s_blk_complete(uint32_t frame_start_ts_us, uint32_t
 		}
 	}
 
-skip_tx_handling:
 	/********** I2S RX **********/
 	struct net_buf *rx_audio_block = NULL;
 	static uint32_t num_overruns;
