@@ -654,9 +654,8 @@ static void audio_datapath_i2s_blk_complete(uint32_t frame_start_ts_us, uint32_t
 	/********** I2S TX **********/
 	static uint8_t *tx_buf;
 
-	/* Only process TX if we have bidirectional stream or headset mode, and TX buffer is provided */
-	if ((IS_ENABLED(CONFIG_STREAM_BIDIRECTIONAL) || (CONFIG_AUDIO_DEV == HEADSET)) &&
-	    (tx_buf_released != NULL)) {
+	/* Only process TX on HEADSET (client) for audio playback, if TX buffer is provided */
+	if ((CONFIG_AUDIO_DEV == HEADSET) && (tx_buf_released != NULL)) {
 		static bool underrun_condition;
 
 		/* Double buffered index */
@@ -705,7 +704,8 @@ static void audio_datapath_i2s_blk_complete(uint32_t frame_start_ts_us, uint32_t
 	static uint32_t num_overruns;
 	static uint32_t num_overruns_last_printed;
 
-	if (IS_ENABLED(CONFIG_STREAM_BIDIRECTIONAL) || (CONFIG_AUDIO_DEV == GATEWAY)) {
+	/* Only process RX on GATEWAY (server) for audio capture */
+	if (CONFIG_AUDIO_DEV == GATEWAY) {
 		if (rx_buf_released == NULL) {
 			ERR_CHK_MSG(-ENOMEM, "No RX data available");
 		}
@@ -764,8 +764,8 @@ static void audio_datapath_i2s_start(void)
 	static uint32_t rx_buf_0[BLK_STEREO_SIZE_OCTETS];
 	static uint32_t rx_buf_1[BLK_STEREO_SIZE_OCTETS];
 
-	/* TX */
-	if (IS_ENABLED(CONFIG_STREAM_BIDIRECTIONAL) || (CONFIG_AUDIO_DEV == HEADSET)) {
+	/* TX - only on HEADSET (client) */
+	if (CONFIG_AUDIO_DEV == HEADSET) {
 		ctrl_blk.out.cons_blk_idx = PREV_IDX(ctrl_blk.out.cons_blk_idx);
 		tx_buf_0 = (uint8_t *)&ctrl_blk.out
 				   .fifo[ctrl_blk.out.cons_blk_idx * BLK_STEREO_NUM_SAMPS];
@@ -1053,15 +1053,8 @@ int audio_datapath_init(void)
 	ctrl_blk.drift_comp.enabled = true;
 	ctrl_blk.pres_comp.enabled = true;
 
-	if (IS_ENABLED(CONFIG_STREAM_BIDIRECTIONAL) && (CONFIG_AUDIO_DEV == GATEWAY)) {
-		/* Disable presentation compensation feature for microphone return on gateway,
-		 * since there's only one stream output from gateway for now, so no need to
-		 * qhave presentation compensation.
-		 */
-		ctrl_blk.pres_comp.enabled = false;
-	} else {
-		ctrl_blk.pres_comp.enabled = true;
-	}
+	/* Presentation compensation: enabled for HEADSET (client), disabled for GATEWAY (server) */
+	ctrl_blk.pres_comp.enabled = (CONFIG_AUDIO_DEV == HEADSET);
 
 	ctrl_blk.pres_comp.pres_delay_us = CONFIG_BT_AUDIO_PRESENTATION_DELAY_US;
 
